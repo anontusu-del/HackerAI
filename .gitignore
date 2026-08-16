@@ -1,0 +1,7 @@
+# archives
+*.zip
+
+# env & logs
+.env
+*.log
+

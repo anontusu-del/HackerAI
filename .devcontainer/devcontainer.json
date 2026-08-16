@@ -1,0 +1,14 @@
+{
+  "name": "GMB Pro Dashboard",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "GMB Pro Dashboard",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "postCreateCommand": "node --version",
+  "postStartCommand": "bash .devcontainer/post-start.sh"
+}
+
