@@ -1,11 +1,15 @@
 {
-  "name": "GMB Pro Dashboard",
+  "name": "TenderIntel PK — Tender Intelligence Platform",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
-  "forwardPorts": [3000],
+  "forwardPorts": [3000, 8000],
   "portsAttributes": {
     "3000": {
-      "label": "GMB Pro Dashboard",
+      "label": "TenderIntel Web (Next.js)",
       "onAutoForward": "openBrowser"
+    },
+    "8000": {
+      "label": "TenderIntel API (FastAPI)",
+      "onAutoForward": "notify"
     }
   },
   "postCreateCommand": "node --version",
