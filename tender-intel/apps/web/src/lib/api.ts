@@ -29,10 +29,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers,
     credentials: "include",
   });
-  if (res.status === 401) {
-    if (typeof window !== "undefined") window.location.href = "/login";
-    throw new ApiError(401, "Not authenticated");
-  }
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
     try {
@@ -60,6 +56,7 @@ export async function apiText(path: string): Promise<string> {
   if (!res.ok) throw new ApiError(res.status, "Download failed");
   return res.text();
 }
+
 
 
 

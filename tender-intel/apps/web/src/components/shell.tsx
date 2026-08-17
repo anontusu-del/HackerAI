@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { User } from "@/lib/types";
@@ -17,15 +17,11 @@ const NAV = [
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    api
-      .get<User>("/auth/me")
-      .then((u) => setUser(u))
-      .catch(() => router.push("/login"));
+    api.get<User>("/auth/me").then((u) => setUser(u)).catch(() => {});
     const loadUnread = () =>
       api
         .get<{ unread: number }>("/alerts/unread-count")
@@ -34,16 +30,7 @@ export default function Shell({ children }: { children: ReactNode }) {
     loadUnread();
     const id = setInterval(loadUnread, 60000);
     return () => clearInterval(id);
-  }, [router]);
-
-  async function logout() {
-    try {
-      await api.post("/auth/logout");
-    } catch {
-      /* ignore */
-    }
-    router.push("/login");
-  }
+  }, []);
 
   return (
     <div className="flex min-h-screen">
@@ -99,16 +86,9 @@ export default function Shell({ children }: { children: ReactNode }) {
                   {user.role} · {user.email}
                 </div>
               </div>
-              <button
-                onClick={logout}
-                title="Sign out"
-                className="rounded-md px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--card-hover)] hover:text-red-400"
-              >
-                ⎋
-              </button>
             </div>
           ) : (
-            <div className="text-xs text-[var(--muted)]">Checking session…</div>
+            <div className="text-xs text-[var(--muted)]">Live mode — admin session</div>
           )}
         </div>
       </aside>

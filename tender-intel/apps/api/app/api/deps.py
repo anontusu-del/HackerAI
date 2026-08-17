@@ -7,6 +7,7 @@ from uuid import UUID
 
 import redis
 from fastapi import Depends, HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -33,17 +34,28 @@ def _extract_token(request: Request) -> str | None:
     return request.cookies.get(COOKIE_NAME)
 
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    token = _extract_token(request)
-    if not token:
+DEFAULT_USER_EMAIL = "admin@tenderintel.pk"
+
+
+def _default_user(db: Session) -> User:
+    """No-login mode: requests without a valid session act as the seeded admin."""
+    user = db.scalar(select(User).where(User.email == DEFAULT_USER_EMAIL))
+    if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    payload = decode_token(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
-    user = db.get(User, UUID(payload["sub"]))
-    if not user or not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive or missing")
     return user
+
+
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """Authenticate from token when present; otherwise fall back to the default
+    admin so the dashboard works with no login at all (live demo mode)."""
+    token = _extract_token(request)
+    if token:
+        payload = decode_token(token)
+        if payload:
+            user = db.get(User, UUID(payload["sub"]))
+            if user and user.is_active:
+                return user
+    return _default_user(db)
 
 
 def require_roles(*roles: str) -> Callable:
@@ -102,5 +114,6 @@ def cache_set_json(r: redis.Redis, key: str, value, ttl: int = 60) -> None:
         r.setex(key, ttl, json.dumps(value, default=str))
     except Exception:
         pass
+
 
 
