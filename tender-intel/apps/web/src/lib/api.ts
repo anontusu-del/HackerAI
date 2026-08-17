@@ -1,7 +1,12 @@
 // Same-origin by default: Next.js rewrites /api/* to the FastAPI backend,
 // which works from any forwarded URL (localhost, GitHub Codespaces, etc.)
-// without CORS issues. Override with NEXT_PUBLIC_API_URL if the API is hosted elsewhere.
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+// without CORS issues. The client must call /api/... paths, so the default
+// prefix is "/api". Server-side (no window) we target the API directly.
+// Override with NEXT_PUBLIC_API_URL if the API is hosted elsewhere.
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window === "undefined" ? "http://localhost:8000/api" : "/api")
+).replace(/\/$/, "");
 
 export class ApiError extends Error {
   status: number;
@@ -55,6 +60,7 @@ export async function apiText(path: string): Promise<string> {
   if (!res.ok) throw new ApiError(res.status, "Download failed");
   return res.text();
 }
+
 
 
 
