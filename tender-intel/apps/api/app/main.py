@@ -59,6 +59,17 @@ def health():
     return {"status": "ok", "app": settings.APP_NAME, "version": "1.0.0"}
 
 
+@app.get("/", tags=["system"], include_in_schema=False)
+def root():
+    return {
+        "app": settings.APP_NAME,
+        "version": "1.0.0",
+        "message": "This is the TenderIntel PK API. Use the web dashboard on port 3000 to log in.",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled error on %s %s", request.method, request.url.path)
@@ -73,5 +84,6 @@ app.include_router(watchlists.router, prefix=settings.API_V1_PREFIX)
 app.include_router(alerts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(analytics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
+
 
 

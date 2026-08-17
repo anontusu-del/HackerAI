@@ -11,17 +11,17 @@ WORKER_DIR="$ROOT/apps/worker"
 LOG_DIR="$ROOT/data"
 mkdir -p "$LOG_DIR"
 
-# 1) PostgreSQL (Debian packaging, data dir under HOME)
+# 1) PostgreSQL (Debian system service, data dir /var/lib/postgresql/17/main)
 if ! pg_isready -h 127.0.0.1 -p 5432 -q 2>/dev/null; then
-  PGBIN=$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)
-  if [ -n "$PGBIN" ] && [ -d /home/node/pgdata ]; then
-    nohup "$PGBIN/pg_ctl" -D /home/node/pgdata -l "$LOG_DIR/postgres.log" start >/dev/null 2>&1 || true
-  fi
+  sudo service postgresql start >/dev/null 2>&1 || true
+  sleep 2
+  pg_isready -h 127.0.0.1 -p 5432 -q 2>/dev/null && echo "PostgreSQL ready" || echo "WARN: PostgreSQL not ready"
 fi
 
 # 2) Redis
 if ! redis-cli -h 127.0.0.1 -p 6379 ping 2>/dev/null | grep -q PONG; then
-  nohup redis-server --bind 0.0.0.0 --port 6379 > "$LOG_DIR/redis.log" 2>&1 &
+  sudo service redis-server start >/dev/null 2>&1 || true
+  sleep 1
 fi
 
 # 3) FastAPI backend :8000
@@ -31,9 +31,9 @@ if ! curl -s -o /dev/null --max-time 2 http://localhost:8000/health; then
   echo "TenderIntel API started on :8000"
 fi
 
-# 4) Worker (scheduled syncs + deadline alerts)
+# 4) Worker (scheduled syncs + deadline alerts) — needs CWD = worker dir
 if ! pgrep -f "worker.main" >/dev/null 2>&1; then
-  nohup "$VENV/bin/python" -m worker.main > "$LOG_DIR/worker.log" 2>&1 &
+  (cd "$WORKER_DIR" && nohup "$VENV/bin/python" -m worker.main > "$LOG_DIR/worker.log" 2>&1 &)
   echo "TenderIntel worker started"
 fi
 
