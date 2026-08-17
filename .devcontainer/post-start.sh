@@ -54,5 +54,14 @@ if ! pgrep -f "watchdog.sh" >/dev/null 2>&1; then
   echo "Watchdog armed"
 fi
 
+# 7) Expose the web port publicly (best effort) so the forwarded URL opens
+#    without the GitHub sign-in interstitial. Requires gh + GITHUB_TOKEN.
+if command -v gh >/dev/null 2>&1 && [ -n "$GITHUB_TOKEN" ] && [ -n "$CODESPACE_NAME" ]; then
+  if ! gh codespace ports -c "$CODESPACE_NAME" 2>/dev/null | grep -qP '^TenderIntel Web.*\t3000\tpublic\t'; then
+    GH_TOKEN="$GITHUB_TOKEN" gh codespace ports visibility 3000:public -c "$CODESPACE_NAME" >/dev/null 2>&1 && echo "Port 3000 set to public"
+  fi
+fi
+
 echo "TenderIntel PK ready — web :3000, api :8000"
+
 
